@@ -1,0 +1,328 @@
+---
+title: "521 Homework 5"
+author: "Evan Hofmeister"
+date: "May 5, 2018"
+output: pdf_document
+---
+
+# Question 1a) ----------------------------------------------------------
+(a) $(2\mathrm{p}\mathrm{t}\mathrm{s})$ Show that if an HMM transition matrix A and emission matrix $\mathrm{B}$ are initialized to uniformly constant values, then the EM algorithm fails to update the parameters meaningfully.
+
+Solution:
+
+Note define the below distributions:
+\begin{center}
+$$
+\begin{aligned}
+Transition: \\
+&A_{i',i} = p(h_{t+1} = i'|h_t = i) \\
+Initial: \\
+& a_i = p(h_1 = i) \\
+Emission: \\
+& B_{i,j} = p(v_t = i|h_t = j) 
+\end{aligned}
+$$
+\end{center}
+
+$\mathrm{M}$-step
+
+Assuming i.i.d. data, the $\mathrm{M}$-step is given by maximising the `energy' component:
+\begin{center}
+$$
+\displaystyle \sum_{n=1}^{N}\langle\log p(v_{1}^{n},\ v_{2}^{n}\ldots,\ v_{T^{n}}^{n},\ h_{1}^{n},\ h_{2}^{n},\ \ldots,\ h_{T^{n}}^{n})\rangle_{p^{old}(\mathrm{h}^{n}|\mathrm{v}^{n})}
+$$
+\end{center}
+
+with respect to the parameters $\mathrm{A}, \mathrm{B}, \mathrm{a};\mathrm{h}^{n}$ denotes $h_{1:T_{n}}$ (to write formulas more easily). We can write the HMM as follows:
+\begin{center}
+$$
+\displaystyle \sum_{n=1}^{N}\{\langle\log p(h_{1})\rangle_{p^{old}(h_{1}|\mathrm{v}^{n})}+\sum_{t=1}^{T_{n}-1}\langle\log p(h_{t+1}|h_{t})\rangle_{p^{old}(h_{t},h_{t+1}|\mathrm{v}^{n})}+\sum_{t=1}^{T_{n}}\langle\log p(v_{t}^{n}|h_{t})\rangle_{p^{old}(h_{t}|\mathrm{v}^{n})}\}
+$$   
+\end{center}
+
+Note that $p^{new}(h_{1}=i)$ denotes the (new) table entry for the probability that the initial hidden variable is in state $i$. 
+
+optimising the previous equation with respect to $p(h_{1})$ ,($p(h_{1})$ is a distribution) we find:
+\begin{center}
+$$
+a_{i}^{new}\displaystyle \equiv p^{new}(h_{1}=i)=\frac{1}{N}\sum_{n=1}^{N}p^{old}(h_{1}=i|\mathrm{v}^{n})
+$$  
+\end{center}
+
+The $\mathrm{M}$-step for the transition is:
+\begin{center}
+$$
+A_{i,i}^{new}\displaystyle \equiv p^{new}(h_{t+1}=i'|h_{t}=i)\propto\sum_{n=1}^{N}\sum_{t=1}^{T_{n}-1}p^{old}(h_{t}=i,\ h_{t+1}=i'|\mathrm{v}^{n})
+$$
+\end{center}
+
+which is the number of times that a transition from hidden state $i$ to hidden state $i'$ occurs, averaged over all times (since we assumed stationarity) and training sequences. Now if we normalize this result:
+\begin{center}
+$$
+A_{i,i}^{new}=\displaystyle \frac{\sum_{n=1}^{N}\sum_{t=1}^{T_{n}-1}p^{old}(h_{t}=i,h_{t+1}=i'|\mathrm{v}^{n})}{\sum_{i},\sum_{n=1}^{N}\sum_{t=1}^{T_{n}-1}p^{old}(h_{t}=i,h_{t+1}=i|\mathrm{v}^{n})}
+$$   
+\end{center}
+
+If we assume transition matrix A, and emission matrix B are initialized to iniformly constant values then, we know that the marginal joint conditional distributions from the previous, $p^{old}(h_{t},\ h_{t+1}|v_{1:T})$ are uniform distribution. From this we can find for any $p^{new}(h_{t+1}=i'|h_{t}=i)$, 
+
+from this we can see that the M-step calculation of $A_{i,j}$ that because the conditional above, $A_{i,j}$ will not be calculated meaningfully. It turns out to only equate to the fractional of the number of hidden variables (H). Basically because the conditional distributions from the previous iteration turn out to have no influence on updating or calculation in the M-step, so our algorithm fails to move towards convergence.
+
+ The $\mathrm{M}$-step update for the emission component is:
+\begin{center}
+$$
+B_{j,i}^{new}\displaystyle \equiv p^{new}(v_{t}=j|h_{t}=i)\propto\sum_{n=1}^{N}\sum_{t=1}^{T_{n}}\mathrm{I}[v_{t}^{n}=j]p^{old}(h_{t}=i|\mathrm{v}^{n})
+$$
+\end{center}
+
+which is the expected number of times that, for the observation being in state $j$, the hidden state is $i$. The proportionality constant is determined by the normalisation requirement.
+
+From the Estep, we also know that with this condition, $v_t$ is indipendent of $h_t$ so $B^{new}$ will update without being conditioned on any $v_t$ meaning that the Mstep will not update anything and the EM algorithm will be broken. Esentially, The M-step in the EM algorithm will not contribute to finding the updated meaningful perameters, and so, we will not be able to find a solution. 
+
+
+# Question 1b) ----------------------------------------------------------
+(b) $(2\mathrm{p}\mathrm{t}\mathrm{s})$ Exercise 23.11 of [B] textbook (A second-order HMM
+
+Second order HMM defined as:
+
+\begin{center}
+$$
+p(h_{1:T},v_{1:T})=p(h_{1})p(v_{1}|h_{1})p(v_{2}|h_{2})p(h_{2}|h_{1})\prod_{t=3}^{T}p(h_{t}|h_{t-1},h_{t-2})p(v_{t}|h_{t})
+$$
+\end{center}
+
+now maximize with respect to $h_T$:
+\begin{center}
+$$
+\begin{aligned}
+&max_{h_T} p(h_{1})p(v_{1}|h_{1})p(v_{2}|h_{2})p(h_{2}|h_{1})\prod_{t=3}^{T}p(h_{t}|h_{t-1},h_{t-2})p(v_{t}|h_{t})
+\\
+&=p(h_{1})p(v_{1}|h_{1})p(v_{2}|h_{2})p(h_{2}|h_{1})\prod_{t=3}^{T-1}p(h_{t}|h_{t-1},h_{t-2})p(v_{t}|h_{t})max_{h_T}p(h_{T}|h_{T-1},h_{T-2})p(v_{T}|h_{T}) \\
+&\mu_{T-1}(h_{T-1}) = max_{h_T}p(h_{T}|h_{T-1},h_{T-2})p(v_{T}|h_{T}) 
+\\
+&\mu_{t-1}(h_{t-1}) = max_{h_t}p(h_{t}|h_{t-1},h_{t-2})p(v_{t}|h_{t})\mu(h_t)
+\end{aligned}
+$$
+\end{center}
+
+ if we de???ne $\mu T (h_T ) := 1$. Thus, we obtain the following recursion to calculate $µ_t(h_t)$:
+ 
+\begin{center}
+$$
+\begin{aligned}
+&\mu_{t}(h_{t}) = max_{h_t+1}p(h_{t+1}|h_{t},h_{t-1})p(v_{t+1}|h_{t+1})\mu_{t+1}(h_{t+1})
+\\
+&\mu T (h_T ) := 1
+\end{aligned}
+$$
+\end{center}
+
+with $\mu(hT ) = 1$. This means that the effect of maximising over $h_2, . . . , h_T$ is compressed into a message
+$\mu(h1)$ so that the most likely state $h_1^*$ is given by:
+
+\begin{center}
+$$
+\begin{aligned}
+h_1^* &= p(h_{1})p(v_{1}|h_{1}) \mu(h_1) \\
+h_2^* &= p(h_{2}|h_{1})p(v_{2}|h_{2})\mu(h_2) \\
+\end{aligned}
+$$
+\end{center}
+
+In this second order example the message we are passing is now in the form of a matrix instead of a vector like in the previous one dimmentional examples we've covered. 
+
+Once we find $h^*_{t-1}$ and $h^*_{t-2}$ we can find $h^*_{t}$ by:
+\begin{center}
+$$
+\begin{aligned}
+h^*_{t}=&argmax_{h_t}p(h_{t}|h^*_{t-1},h^*_{t-2})p(v_{t}|h_{t})\mu(h_t)
+\end{aligned}
+$$
+\end{center}
+
+$h_{t-1}^*$ and $h_{t-2}^*$ are found similarly to before, and backtracking is used. Then we have defined the optimal for $h_t$ above. Basically just a system of recursion is used.
+
+
+
+
+# Question 1c) ----------------------------------------------------------
+(c) $(2\mathrm{p}\mathrm{t}\mathrm{s})$ Exercise 23.13 of [B] textbook (Consider the HMM defined on hidden variables
+
+
+We need to to esentially find the transition matrix from H to V with the given information. The problem gives us the form of $P(H|V)$. 
+
+We can define $P(H|V)$ as follows using the pairwise marginal formula defined in the textbook and in class. 
+
+We will also need the likelihood $p(v_{1:T})$ of a sequence of observations can be computed from:
+
+\begin{center}
+$p(v_{1:T})=\displaystyle \sum_{h_{T}}p(h_{T},\ v_{1:T})=\sum_{h_{T}}\alpha(h_{T})$   (23.2.26)
+\end{center}
+
+an explicit recursion is as follows:
+$$
+p(h_{t},\ h_{t+1}|v_{1:T})\propto p(v_{1:t},\ v_{t+1},\ v_{t+2:T},\ h_{t+1},\ h_{t})/p(v_{1:T})
+$$
+\begin{center}
+$$
+\begin{aligned}
+&p(h_{t},\ h_{t+1}|v_{1:T})\propto\alpha(h_{t})p(v_{t+1}|h_{t+1})p(h_{t+1}|h_{t})\beta(h_{t+1})/p(v_{1:T})
+\\
+&=p(h_{t},\ h_{t+1}|v_{1:T})\propto\alpha(h_{t})p(v_{t+1}|h_{t+1})p(h_{t+1}|h_{t})\beta(h_{t+1})/\sum_{h_T}\alpha(h_{T}))
+\end{aligned}
+$$   
+\end{center}
+
+Now given the form $P(V,H)$, we can wewrite the form of $P(H|V)$ is proportional to:
+
+\begin{center}
+$$
+\prod_{t=1}^{T}\zeta(h_{t-1},h_t) \prod_{t=1}^{T}p(h_{t}|h_{t-1})p(v_{t}|h_{t})
+$$
+\end{center}
+
+def: $\kappa=h_T$
+
+We also then can infer:
+\begin{center}
+$$
+\tilde{p}(h_{T}|h_{T-1})=\zeta(h_{T-1},h_T)/\sum_{\kappa}\zeta(h_{T-1},h_T)
+$$
+\end{center}
+Now we can expand the previous where $\omega= \epsilon(1,T-1)$:
+\begin{center}
+$$
+[\sum_{h_{T}}\zeta(h_{T-1},h_T)](\tilde{p}(h_{T}|h_{T-1}))\prod_{\omega}\zeta(h_{t-1},h_t)
+$$
+\end{center}
+
+Now given the form of $\tilde{p}$, we have enentially proved the posterior is a markov chain given that we have satisfied the given form.  
+
+Where as previous for the end case, we can define:
+\begin{center}
+$$
+\tilde{p}(h_{t}|h_{t-1})=\zeta(h_{t-1},h_t)\frac{\zeta(h_{t},h_T)}{\sum_{\kappa}\zeta(h_{T-1},h_T)}
+$$
+\end{center}
+
+# Question 2) ----------------------------------------------------------
+2. $(4\mathrm{p}\mathrm{t}\mathrm{s})$ Exercise 24.5 of the [B] textbook (Consider a supervised learning In part 2 of the exercise, you do not need to write a routine.
+
+We can use MLE, more specifically Ordinary Least Sqeares to estimate $W_t^{T}$.
+
+To do this, we just reference the basic OLS method:
+
+Our regression is in the form $\hat{y}=W^T_iX_i$
+
+\begin{center}
+$$
+S(W)=\sum_{i=1}^{n}(y-x_i^{T}W)^2=(y-XW)^T(y-XW)
+$$
+\end{center}
+
+\begin{center}
+$$
+[\hat{W_t}]=argmin_{b\epsilon(R)}S(W)=\sum_{i=1}^{n}(y-x_i^{T}W)^2=(y-XW)^T(y-XW)
+$$
+\end{center}
+
+and to find $\eta_t^y$ we can simply:
+
+
+\begin{center}
+$$
+\hat{\eta} = y - \hat{y} = y-W^TX
+$$
+\end{center}
+
+Next we can use reduced chi-squared to estimate $\sigma^2_y$:
+\begin{center}
+$$
+S^2=\hat{\eta}^T\hat{\eta}/(n-p)
+$$
+\end{center}
+
+This is the OLS estimate of $\sigma^2$ which is quite similar to the MLE estimator but is always unbiased regardless of sample size. 
+
+part ii)
+
+We can think of this model as a typical latent linear dynamical system (LDS) and think of it as a state space model:
+
+\begin{center}
+$$
+\begin{aligned}
+&Wt=W_{t-1} + \eta_t^w
+\\
+&y_t=W_t^Tx_t + \eta^y
+\\
+&\eta_t^w|W_{t-1} \sim N(\tilde{w_t},\Sigma_t^w)
+\\
+&\eta_t^y|W_{t-1} \sim N(\tilde{y_t},\Sigma_t^y)
+\end{aligned}
+$$
+\end{center}
+
+Now to find $E[W_t|D]$ we find $f_t$ as defined in lecture and the textbook. We need to write a recursive relationship between $f_t$ and $f_{t-1}$
+
+
+$\bullet$ As in the case of HMMs, the filtering probability $p(\mathrm{w}_{t}|\mathrm{y}_{1:t})$ can be found by recursion:
+
+$$
+p(\mathrm{w}_{t}|\mathrm{y}_{1:t})=\frac{p(\mathrm{y}_{1:t},\mathrm{w}_{t})}{p(\mathrm{y}_{1:t})}=\frac{1}{p(\mathrm{y}_{1:t})}\int_{-\infty}^{\infty}p(\mathrm{y}_{1:t-1},\ \mathrm{w}_{t-1},\ \mathrm{y}_{t},\ \mathrm{w}_{t})\mathrm{d}\mathrm{w}_{t-1}
+$$
+\begin{center}
+$$
+=\frac{p(\mathrm{y}_{1:(t-1)})}{p(\mathrm{y}_{1:t})}\int_{-\infty}^{\infty}p(\mathrm{w}_{t-1}|\mathrm{y}_{1:t-1})p(\mathrm{w}_{t}|\mathrm{w}_{t-1})p(\mathrm{y}_{t}|\mathrm{w}_{t})\mathrm{d}\mathrm{w}_{t-1}.
+$$
+\end{center}
+$\bullet$ This can be seen as a recursive formula for $p(\mathrm{w}_{t}|\mathrm{y}_{1:t})$ . However, it is not possible to directly use this relationship, as there are infinite values for $\mathrm{w}_{t}.$
+
+$\bullet$ We need to store the distribution $p(\mathrm{w}_{t}|\mathrm{y}_{1:t})$ using finite number of parameters. Then, we may recursively update those finite number of parameters. Indeed, as we will show next, $p(\mathrm{w}_{t}|\mathrm{y}_{1:t})$ has a normal distribution, that is
+$$
+p(\mathrm{w}_{t}|\mathrm{y}_{1:t})=N(\mathrm{w}_{t}|\mathrm{f}_{t},\ F_{t})
+$$
+where $\mathrm{f}_{t} :=\mathrm{E}(\mathrm{W}_{t}|\mathrm{Y}_{1:t}=\mathrm{y}_{1:t})$ and $F_{t} :=\mathrm{C}\mathrm{o}\mathrm{y}(\mathrm{W}_{t},\ \mathrm{W}_{t}|\mathrm{Y}_{1:t}=\mathrm{y}_{1:t})$
+
+To simplify (LDS is time-homogenous and have zero bias):
+
+$\left\{\begin{array}{ll}
+\mathrm{W}_{t}=A\mathrm{W}_{t-1}+\eta_{t}^{w}; & \eta_{t}^{w}|\mathrm{W}_{t-1}\sim N(0,\ \Sigma^{w})\ ,\\
+\mathrm{Y}_{t}=B\mathrm{W}_{t}+\eta_{t}^{y}; & \eta_{t}^{y}|\mathrm{W}_{t}\sim N(0,\ \Sigma^{y})\ ,
+\end{array}\right.$
+
+$\bullet$ Since $(\mathrm{w}_{t},\ \mathrm{y}_{1:t})$ is jointly normal $p(\mathrm{w}_{t},\ \mathrm{y}_{t}|\mathrm{y}_{1:(t-1)})$ is also normal by property (4) of the normal density. Therefore, we have
+$$
+p(\mathrm{w}_{t},\ \mathrm{y}_{t}|\mathrm{y}_{1:(t-1)})=N(\left(\begin{array}{l}
+\mathrm{w}_{t}\\
+\mathrm{y}_{t}
+\end{array}\right)\left(\begin{array}{l}
+\mu_{\mathrm{w}}\\
+\mu_{\mathrm{y}}
+\end{array}\right),\ \left(\begin{array}{ll}
+\sum_{\mathrm{w}\mathrm{w}} & \sum_{\mathrm{w}\mathrm{y}}\\
+\sum_{\mathrm{w}\mathrm{y}}^{\mathrm{T}} & \sum_{\mathrm{y}\mathrm{y}}
+\end{array}\right))
+$$
+
+We can find:
+$\mu_{\mathrm{w}} :=\mathrm{E}(\mathrm{W}_{t}|\mathrm{Y}_{1:(t-1)}=\mathrm{y}_{1:(t-1)})=\mathrm{E}(A\mathrm{W}_{t-1}+\eta_{t}^{w}|\mathrm{Y}_{1:(t-1)}=\mathrm{y}_{1:(t-1)})=A\mathrm{f}_{t-1},$
+
+# Property 4) ----------------------------------------------------------
+Note, we have referenced property 4, as stated below:
+$p(\mathrm{h}_{t}|\mathrm{v}_{1:t})\sim N(\mathrm{h}_{t}|\mathrm{f}_{t},\ F_{t})$ where
+$$
+\mathrm{f}_{t}=\mu_{\mathrm{h}}+\Sigma_{\mathrm{h}\mathrm{v}}\Sigma_{\mathrm{v}\mathrm{v}}^{-1}(\mathrm{v}_{t}-\mu_{\mathrm{v}})=A\mathrm{f}_{t-1}+P_{t-1}B^{\mathrm{T}}(BP_{t-1}B^{\mathrm{T}})^{-1}(\mathrm{v}_{t}-B\ A\ \mathrm{f}_{t-1})\ ,
+$$
+and
+$$
+F_{t}=\Sigma_{\mathrm{h}\mathrm{h}}-\Sigma_{\mathrm{h}\mathrm{v}}\Sigma_{\mathrm{v}\mathrm{v}}^{-1}\Sigma_{\mathrm{h}\mathrm{v}}^{\mathrm{T}}=[I-K_{t-1}B]P_{t-1}.
+$$
+Here, we have defined
+$$
+P_{t-1}:=AF_{t-1}A^{\mathrm{T}}+\Sigma^{h},
+$$
+and
+$$
+K_{t-1}\ :=P_{t-1}B^{\mathrm{T}}(BP_{t-1}B^{\mathrm{T}})^{-1}
+$$
+
+

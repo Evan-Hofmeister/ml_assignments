@@ -1,0 +1,93 @@
+---
+title: "521 HW 3-4 Rmarkdown Solutions"
+author: "Evan Hofmeister"
+date: "May 2, 2018"
+output: pdf_document
+---
+
+# #Question #1) ----------------------------------------------------------
+
+Rcode lines: 1-66
+
+See attached R-code. 
+
+The EM algorithm should produce the same probability for P(politics|x) = 0.831 but after attempting to write an EM algorithm, I was not sucessful over multiple attempts. I will look over this material more. In my hand written derivation, basically it's very similar to what was derived in class but the everything is summed over all 13 (9 vs, 4 invis) observations.
+
+# #Question #2A) ----------------------------------------------------------
+
+Rcode lines: 66-120
+2A)
+
+From the given information, the state space of the is problem is $S=(P,NP)$ meaning payment of dividend in a quarter or non-payment.
+
+We can then see from the given info that the transition matrix (M) is below:
+```{r question2A, echo=FALSE}
+
+transition_mtx = matrix(nrow = 2, ncol = 2)
+
+transition_mtx[1,1] = 0.8
+transition_mtx[1,2] = 0.2
+transition_mtx[2,1] = 0.5
+transition_mtx[2,2] = 0.5
+
+row.names(transition_mtx) = c("P","NP")
+colnames(transition_mtx) = c("P","NP")
+
+print(transition_mtx)
+```
+We also know that $\pi_1 = (0.9, 0.1)$. So we can find the probability we are looking for by, $\pi_1M^{(4-1)}$
+
+$$
+\begin{bmatrix}
+    0.9  &  0.1      \\
+\end{bmatrix}
+*
+\begin{bmatrix}
+    0.8  &  0.2      \\
+    0.5  &  0.5      
+\end{bmatrix}^3 
+=
+\begin{bmatrix}
+    0.7193  &  0.28074      \\
+\end{bmatrix}
+$$
+
+So we can see that about $71.93\%$ of companies will pay dividends in Q1 2016.
+
+
+# #Question #2B) -
+Rcode lines:
+
+Part 1)
+ 0.153823
+
+Part 2)
+(0.93107932 0.06892068 0.00000000)
+
+# #Question #3) ----------------------------------------------------------
+
+3A)
+
+Rcode: 120-292
+
+We can see from the results that code properly clusters the mixture of markov chains like in the book.
+
+3B)
+
+Rcode lines: 292-344
+
+From my Rcode, we can see the below results:
+
+probability of the sequence s for the given by transition matrix pnew is: 1.295743e-10
+
+probability of the sequence s for the given by transition matrix qnew is: 8.614734e-24
+
+3C)
+
+Rcode lines: 344-548
+
+You can see I generated 100 sequences from MC pnew and the next 100 from MC qnew. Then I used the EM algorithm from part A to cluster these samples into 2 groups.
+
+The solution is as expected. The first 100 rows of the matrix are clustered in the same state, and the next 100 rows from the generated Markov Chain data are clustered into the other state. This is as expected because we generated the data in this way (first 100 from pnew, next 100 from qnew). 
+
+You can see this where i subtract the first cluster from the first 100 rows of the generated data, and the dp the same with the second 100 rows and the second cluster. They both result in matricies of 0, showing clearly that what I have said above is true.
